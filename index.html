@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Control Fronterizo</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #gameContainer {
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        #passport {
+            background-color: #2c3e50;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #95a5a6;
+            border-radius: 5px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #2c3e50;
+            border-radius: 5px;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        #acceptButton {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        #rejectButton {
+            background-color: #c0392b;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #message {
+            margin-top: 20px;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        .success {
+            background-color: #27ae60;
+        }
+
+        .error {
+            background-color: #c0392b;
+        }
+
+        #rules {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #2c3e50;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1>Control Fronterizo</h1>
+        
+        <div class="stats">
+            <div>Día: <span id="day">1</span>/5</div>
+            <div>Créditos: <span id="money">100</span></div>
+        </div>
+
+        <div id="passport">
+            <h2>PASAPORTE</h2>
+            <p>Nombre: <span id="name"></span></p>
+            <p>País: <span id="country"></span></p>
+            <p>Fecha de expiración: <span id="expDate"></span></p>
+        </div>
+
+        <div class="button-container">
+            <button id="acceptButton" onclick="makeDecision(true)">ACEPTAR</button>
+            <button id="rejectButton" onclick="makeDecision(false)">RECHAZAR</button>
+        </div>
+
+        <div id="message"></div>
+
+        <div id="rules">
+            <h3>Reglas:</h3>
+            <p>- Los nombres no deben contener símbolos</p>
+            <p>- La fecha de expiración debe ser vigente</p>
+            <p>- Países válidos: Arstotzka, Kolechia, Antegria, Obristan</p>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            money: 100,
+            day: 1,
+            currentPassport: null
+        };
+
+        const names = ["Juan", "María", "Pedro", "Ana", "Carlos"];
+        const countries = ["Arstotzka", "Kolechia", "Antegria", "Obristan"];
+
+        function generatePassport() {
+            const isValid = Math.random() > 0.3;
+            let passport = {
+                name: names[Math.floor(Math.random() * names.length)],
+                country: countries[Math.floor(Math.random() * countries.length)],
+                expDate: generateDate(),
+                isValid: isValid
+            };
+
+            if (!isValid) {
+                const errorType = Math.floor(Math.random() * 3);
+                switch(errorType) {
+                    case 0:
+                        passport.expDate = "01/01/2020"; // Fecha expirada
+                        break;
+                    case 1:
+                        passport.name = passport.name.replace('a', '@'); // Nombre inválido
+                        break;
+                    case 2:
+                        passport.country = "Falsonia"; // País inválido
+                        break;
+                }
+            }
+
+            return passport;
+        }
+
+        function generateDate() {
+            const day = Math.floor(Math.random() * 28) + 1;
+            const month = Math.floor(Math.random() * 12) + 1;
+            const year = Math.floor(Math.random() * 3) + 2023;
+            return `${day}/${month}/${year}`;
+        }
+
+        function updateDisplay() {
+            document.getElementById('day').textContent = state.day;
+            document.getElementById('money').textContent = state.money;
+            document.getElementById('name').textContent = state.currentPassport.name;
+            document.getElementById('country').textContent = state.currentPassport.country;
+            document.getElementById('expDate').textContent = state.currentPassport.expDate;
+        }
+
+        function makeDecision(accepted) {
+            const correct = (accepted === state.currentPassport.isValid);
+            
+            if (correct) {
+                state.money += 20;
+                showMessage("¡Decisión correcta! +20 créditos", true);
+            } else {
+                state.money -= 50;
+                showMessage("¡Decisión incorrecta! -50 créditos", false);
+            }
+
+            state.day++;
+
+            if (state.money <= 0) {
+                endGame("¡Te has quedado sin dinero! Estás despedido.");
+                return;
+            }
+
+            if (state.day > 5) {
+                endGame(`¡Has sobrevivido tu primera semana! Terminaste con ${state.money} créditos.`);
+                return;
+            }
+
+            setTimeout(() => {
+                state.currentPassport = generatePassport();
+                updateDisplay();
+                clearMessage();
+            }, 1500);
+        }
+
+        function showMessage(text, isSuccess) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = isSuccess ? 'success' : 'error';
+        }
+
+        function clearMessage() {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = '';
+            messageEl.className = '';
+        }
+
+        function endGame(message) {
+            showMessage(message, state.money > 0);
+            document.getElementById('acceptButton').disabled = true;
+            document.getElementById('rejectButton').disabled = true;
+        }
+
+        // Iniciar juego
+        state.currentPassport = generatePassport();
+        updateDisplay();
+    </script>
+</body>
+</html>
