@@ -19,49 +19,48 @@
             background-color: #34495e;
             padding: 20px;
             border-radius: 10px;
-            max-width: 600px;
+            max-width: 800px;
             width: 100%;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
-        #passport {
-            background-color: #2c3e50;
-            padding: 20px;
-            margin: 20px 0;
-            border: 2px solid #95a5a6;
-            border-radius: 5px;
-        }
-
-        .stats {
+        .passports {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #2c3e50;
-            border-radius: 5px;
-        }
-
-        .button-container {
-            display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
         }
 
+        .passport {
+            background-color: #2c3e50;
+            padding: 10px;
+            border: 2px solid #95a5a6;
+            border-radius: 5px;
+            width: 200px;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
         button {
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 5px 10px;
+            font-size: 14px;
             cursor: pointer;
             border: none;
             border-radius: 5px;
             transition: background-color 0.3s;
         }
 
-        #acceptButton {
+        .acceptButton {
             background-color: #27ae60;
             color: white;
         }
 
-        #rejectButton {
+        .rejectButton {
             background-color: #c0392b;
             color: white;
         }
@@ -90,100 +89,143 @@
             background-color: #c0392b;
         }
 
-        #rules {
-            margin-top: 20px;
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
             padding: 10px;
             background-color: #2c3e50;
             border-radius: 5px;
         }
+
+        #summary {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #2c3e50;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        #rules {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #34495e;
+            padding: 10px;
+            border-radius: 5px;
+            color: #ecf0f1;
+            font-size: 14px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            max-width: 200px;
+        }
     </style>
 </head>
 <body>
+    <div id="rules">
+        <h3>Reglas:</h3>
+        <p>- Los nombres no deben contener símbolos.</p>
+        <p>- La fecha de expiración debe ser vigente.</p>
+        <p>- Países válidos: Arstotzka, Kolechia, Antegria, Obristan.</p>
+    </div>
+
     <div id="gameContainer">
         <h1>Control Fronterizo</h1>
-        
+
         <div class="stats">
             <div>Día: <span id="day">1</span>/5</div>
             <div>Créditos: <span id="money">100</span></div>
         </div>
 
-        <div id="passport">
-            <h2>PASAPORTE</h2>
-            <p>Nombre: <span id="name"></span></p>
-            <p>País: <span id="country"></span></p>
-            <p>Fecha de expiración: <span id="expDate"></span></p>
-        </div>
-
-        <div class="button-container">
-            <button id="acceptButton" onclick="makeDecision(true)">ACEPTAR</button>
-            <button id="rejectButton" onclick="makeDecision(false)">RECHAZAR</button>
+        <div class="passports" id="passportsContainer">
+            <!-- Aquí se generan los pasaportes dinámicamente -->
         </div>
 
         <div id="message"></div>
-
-        <div id="rules">
-            <h3>Reglas:</h3>
-            <p>- Los nombres no deben contener símbolos</p>
-            <p>- La fecha de expiración debe ser vigente</p>
-            <p>- Países válidos: Arstotzka, Kolechia, Antegria, Obristan</p>
-        </div>
+        <div id="summary"></div>
     </div>
 
     <script>
         const state = {
             money: 100,
             day: 1,
-            currentPassport: null
+            passports: [],
+            decisions: []
         };
 
         const names = ["Juan", "María", "Pedro", "Ana", "Carlos"];
         const countries = ["Arstotzka", "Kolechia", "Antegria", "Obristan"];
 
-        function generatePassport() {
-            const isValid = Math.random() > 0.3;
-            let passport = {
-                name: names[Math.floor(Math.random() * names.length)],
-                country: countries[Math.floor(Math.random() * countries.length)],
-                expDate: generateDate(),
-                isValid: isValid
-            };
+        function generatePassports() {
+            const passports = [];
+            for (let i = 0; i < 5; i++) {
+                const isValid = Math.random() > 0.3;
+                let passport = {
+                    id: i,
+                    name: names[Math.floor(Math.random() * names.length)],
+                    country: countries[Math.floor(Math.random() * countries.length)],
+                    expDate: generateValidDate(),
+                    isValid: isValid
+                };
 
-            if (!isValid) {
-                const errorType = Math.floor(Math.random() * 3);
-                switch(errorType) {
-                    case 0:
-                        passport.expDate = "01/01/2020"; // Fecha expirada
-                        break;
-                    case 1:
-                        passport.name = passport.name.replace('a', '@'); // Nombre inválido
-                        break;
-                    case 2:
-                        passport.country = "Falsonia"; // País inválido
-                        break;
+                if (!isValid) {
+                    const errorType = Math.floor(Math.random() * 3);
+                    switch(errorType) {
+                        case 0:
+                            passport.expDate = "2020-01-01"; // Fecha expirada
+                            break;
+                        case 1:
+                            passport.name = passport.name.replace('a', '@'); // Nombre inválido
+                            break;
+                        case 2:
+                            passport.country = "Falsonia"; // País inválido
+                            break;
+                    }
                 }
+                passports.push(passport);
             }
-
-            return passport;
+            return passports;
         }
 
-        function generateDate() {
-            const day = Math.floor(Math.random() * 28) + 1;
-            const month = Math.floor(Math.random() * 12) + 1;
-            const year = Math.floor(Math.random() * 3) + 2023;
-            return `${day}/${month}/${year}`;
+        function generateValidDate() {
+            const today = new Date();
+            const futureDate = new Date(today);
+            futureDate.setFullYear(today.getFullYear() + Math.floor(Math.random() * 3));
+            return futureDate.toISOString().split('T')[0];
         }
 
         function updateDisplay() {
             document.getElementById('day').textContent = state.day;
             document.getElementById('money').textContent = state.money;
-            document.getElementById('name').textContent = state.currentPassport.name;
-            document.getElementById('country').textContent = state.currentPassport.country;
-            document.getElementById('expDate').textContent = state.currentPassport.expDate;
+            const container = document.getElementById('passportsContainer');
+            container.innerHTML = '';
+            state.passports.forEach(passport => {
+                const passportEl = document.createElement('div');
+                passportEl.classList.add('passport');
+                passportEl.innerHTML = `
+                    <h3>PASAPORTE</h3>
+                    <p>Nombre: ${passport.name}</p>
+                    <p>País: ${passport.country}</p>
+                    <p>Fecha de expiración: ${passport.expDate}</p>
+                    <div class="button-container">
+                        <button class="acceptButton" onclick="makeDecision(${passport.id}, true)">Aceptar</button>
+                        <button class="rejectButton" onclick="makeDecision(${passport.id}, false)">Rechazar</button>
+                    </div>
+                `;
+                container.appendChild(passportEl);
+            });
         }
 
-        function makeDecision(accepted) {
-            const correct = (accepted === state.currentPassport.isValid);
-            
+        function makeDecision(id, accepted) {
+            const passport = state.passports.find(p => p.id === id);
+            if (!passport) return;
+
+            const correct = (accepted === passport.isValid);
+            state.decisions.push({
+                passport,
+                accepted,
+                correct
+            });
+
             if (correct) {
                 state.money += 20;
                 showMessage("¡Decisión correcta! +20 créditos", true);
@@ -192,6 +234,27 @@
                 showMessage("¡Decisión incorrecta! -50 créditos", false);
             }
 
+            state.passports = state.passports.filter(p => p.id !== id);
+            updateDisplay();
+
+            if (state.passports.length === 0) {
+                endDay();
+            }
+        }
+
+        function endDay() {
+            const summaryEl = document.getElementById('summary');
+            summaryEl.innerHTML = '<h3>Resumen del Día</h3>';
+
+            state.decisions.forEach(decision => {
+                const { passport, accepted, correct } = decision;
+                const result = correct ? 'Correcto' : 'Incorrecto';
+                summaryEl.innerHTML += `
+                    <p>${result}: Nombre: ${passport.name}, País: ${passport.country}, Fecha: ${passport.expDate}, Decisión: ${accepted ? 'Aceptar' : 'Rechazar'}</p>
+                `;
+            });
+
+            state.decisions = [];
             state.day++;
 
             if (state.money <= 0) {
@@ -205,10 +268,10 @@
             }
 
             setTimeout(() => {
-                state.currentPassport = generatePassport();
+                summaryEl.innerHTML = '';
+                state.passports = generatePassports();
                 updateDisplay();
-                clearMessage();
-            }, 1500);
+            }, 3000);
         }
 
         function showMessage(text, isSuccess) {
@@ -217,20 +280,14 @@
             messageEl.className = isSuccess ? 'success' : 'error';
         }
 
-        function clearMessage() {
-            const messageEl = document.getElementById('message');
-            messageEl.textContent = '';
-            messageEl.className = '';
-        }
-
         function endGame(message) {
             showMessage(message, state.money > 0);
-            document.getElementById('acceptButton').disabled = true;
-            document.getElementById('rejectButton').disabled = true;
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => button.disabled = true);
         }
 
         // Iniciar juego
-        state.currentPassport = generatePassport();
+        state.passports = generatePassports();
         updateDisplay();
     </script>
 </body>
