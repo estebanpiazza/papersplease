@@ -39,6 +39,27 @@
             width: 200px;
         }
 
+        .passport-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 5px 0;
+        }
+
+        .inspect-button {
+            background-color: #f1c40f;
+            color: #2c3e50;
+            padding: 2px 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .inspect-button:hover {
+            background-color: #f39c12;
+        }
+
         .button-container {
             display: flex;
             gap: 5px;
@@ -149,7 +170,8 @@
             money: 100,
             day: 1,
             passports: [],
-            decisions: []
+            decisions: [],
+            inspectedItems: new Set()
         };
 
         const names = ["Juan", "María", "Pedro", "Ana", "Carlos"];
@@ -193,22 +215,68 @@
             return futureDate.toISOString().split('T')[0];
         }
 
+        function inspectItem(passportId, item) {
+            const itemKey = `${passportId}-${item}`;
+            state.inspectedItems.add(itemKey);
+            
+            const passport = state.passports.find(p => p.id === passportId);
+            if (!passport) return;
+
+            let isValid = true;
+            let message = "";
+
+            switch(item) {
+                case 'name':
+                    isValid = !/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/.test(passport.name);
+                    message = isValid ? "Nombre válido" : "¡Nombre contiene símbolos inválidos!";
+                    break;
+                case 'country':
+                    isValid = countries.includes(passport.country);
+                    message = isValid ? "País válido" : "¡País no reconocido!";
+                    break;
+                case 'expDate':
+                    const today = new Date();
+                    const expDate = new Date(passport.expDate);
+                    isValid = expDate > today;
+                    message = isValid ? "Fecha válida" : "¡Pasaporte expirado!";
+                    break;
+            }
+
+            showMessage(message, isValid);
+
+            if (!isValid) {
+                makeDecision(passportId, false);
+            }
+
+            updateDisplay();
+        }
+
         function updateDisplay() {
             document.getElementById('day').textContent = state.day;
             document.getElementById('money').textContent = state.money;
             const container = document.getElementById('passportsContainer');
             container.innerHTML = '';
+            
             state.passports.forEach(passport => {
                 const passportEl = document.createElement('div');
                 passportEl.classList.add('passport');
                 passportEl.innerHTML = `
                     <h3>PASAPORTE</h3>
-                    <p>Nombre: ${passport.name}</p>
-                    <p>País: ${passport.country}</p>
-                    <p>Fecha de expiración: ${passport.expDate}</p>
+                    <div class="passport-item">
+                        <p>Nombre: ${passport.name}</p>
+                        <button class="inspect-button" onclick="inspectItem(${passport.id}, 'name')">Rechazar</button>
+                    </div>
+                    <div class="passport-item">
+                        <p>País: ${passport.country}</p>
+                        <button class="inspect-button" onclick="inspectItem(${passport.id}, 'country')">Rechazar</button>
+                    </div>
+                    <div class="passport-item">
+                        <p>Fecha de expiración: ${passport.expDate}</p>
+                        <button class="inspect-button" onclick="inspectItem(${passport.id}, 'expDate')">Rechazar</button>
+                    </div>
                     <div class="button-container">
                         <button class="acceptButton" onclick="makeDecision(${passport.id}, true)">Aceptar</button>
-                        <button class="rejectButton" onclick="makeDecision(${passport.id}, false)">Rechazar</button>
+
                     </div>
                 `;
                 container.appendChild(passportEl);
@@ -235,6 +303,10 @@
             }
 
             state.passports = state.passports.filter(p => p.id !== id);
+            state.inspectedItems = new Set([...state.inspectedItems].filter(
+                item => !item.startsWith(id.toString())
+            ));
+            
             updateDisplay();
 
             if (state.passports.length === 0) {
@@ -255,6 +327,7 @@
             });
 
             state.decisions = [];
+            state.inspectedItems.clear();
             state.day++;
 
             if (state.money <= 0) {
